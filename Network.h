@@ -27,5 +27,6 @@ public:
   int postWebhooks(String value1);
   bool writeTemperatureData(double temp, String ts);
   bool readPost();
+  bool readIsHome();
   bool firebaseReady();
 };

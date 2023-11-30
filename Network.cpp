@@ -20,8 +20,8 @@
 static Network* instance = NULL;
 
 // IFTTT data
-String eventNAME = "new_mail";
-String webhooksKEY = "bk-rNjIlmxawG-VkvLWg9K";
+String eventNAME = "send_alert";
+String webhooksKEY = "jvTLWbxqrCvcVdM3e3Uxp";
 const int httpsPort = 443;
 String url = "https://maker.ifttt.com/trigger/" + eventNAME + "/with/key/" + webhooksKEY;
 
@@ -71,6 +71,53 @@ bool Network::writeTemperatureData(double temp, String ts) {  // TODO: implement
   if (Firebase.Firestore.createDocument(&fbdo, FIREBASE_PROJECT_ID, "", documentPath.c_str(), content.raw())) {
     Serial.println("ok write actual temperature");
     return 1;
+  } else {
+    Serial.println(fbdo.errorReason());
+    return 0;
+  }
+}
+
+bool Network::readPost() {
+  FirebaseJsonData result;
+  FirebaseJson query;
+
+  query.set("select/fields/[0]/fieldPath", "post");
+
+  query.set("from/collectionId", "temperature");
+  query.set("from/allDescendants", false);
+
+  // COMPOSITE FILTERS
+  query.set("where/fieldFilter/field/fieldPath", "type");
+  query.set("where/fieldFilter/op", "EQUAL");
+  query.set("where/fieldFilter/value/stringValue", "post");
+
+  if (Firebase.Firestore.runQuery(&fbdo, FIREBASE_PROJECT_ID, "", "/", &query)) {
+    // Serial.printf("ok post\n%s\n\n", fbdo.payload().c_str());
+    FirebaseJson resultJSON(fbdo.payload().c_str());
+    resultJSON.get(result, "[0]/document/fields/post/booleanValue/");
+    return result.to<bool>();
+
+  } else {
+    Serial.println(fbdo.errorReason());
+    return 0;
+  }
+}
+
+bool Network::readIsHome() {
+  FirebaseJsonData result;
+  FirebaseJson query;
+
+  query.set("select/fields/[0]/fieldPath", "isHome");
+
+  query.set("from/collectionId", "homeoraway");
+  query.set("from/allDescendants", false);
+
+  if (Firebase.Firestore.runQuery(&fbdo, FIREBASE_PROJECT_ID, "", "/", &query)) {
+    // Serial.printf("ok post\n%s\n\n", fbdo.payload().c_str());
+    FirebaseJson resultJSON(fbdo.payload().c_str());
+    resultJSON.get(result, "[0]/document/fields/isHome/booleanValue/");
+    return result.to<bool>();
+
   } else {
     Serial.println(fbdo.errorReason());
     return 0;

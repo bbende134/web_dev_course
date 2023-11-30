@@ -59,6 +59,8 @@ void loop() {
   current_millis_distance = millis();
   current_millis_temp = current_millis_distance;
 
+  if (network->firebaseReady() && network->readPost()) Serial.println("posting");
+
   if (network->firebaseReady() && (current_millis_temp - previous_millis_temp >= time_interval_temp)) {
 
     if (!DateTime.isTimeValid()) {
@@ -100,13 +102,17 @@ void loop() {
     // Calculate the distance change since the last measurement
     long distance_change = distance - previous_distance;
 
-    // Check if the distance change exceeds the specified interval
     if (abs(distance_change) >= distance_interval) {
-      // Print the distance change to the Serial Monitor
-      Serial.print("Distance Change: ");
-      Serial.print(distance_change);
-      Serial.println(" cm");
 
+
+      if (!network->readIsHome() && distance_change >= distance_interval) {
+        Serial.println("alert!!, door is open");
+        network->postWebhooks("open");
+      }
+      if (!network->readIsHome() && distance_change < 0) {
+        Serial.println("alert!!, door is closed");
+        network->postWebhooks("closed");
+      }
       // Update the previous distance and previous millis
       previous_distance = distance;
       previous_millis_distance = current_millis_distance;
@@ -115,7 +121,7 @@ void loop() {
 
 
   // Make sure to include a delay to prevent constant triggering of the interval
-  delay(50);
+  delay(100);
 }
 
 void initNetwork() {
