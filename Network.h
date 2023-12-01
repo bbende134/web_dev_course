@@ -24,9 +24,10 @@ public:
   Network();
   void initWiFi();
   void firebaseInit();
-  int postWebhooks(String value1);
+  int postWebhooks(String eventNAME, String value1);
   bool writeTemperatureData(double temp, String ts);
   bool readPost();
+  bool updatePost();
   bool readIsHome();
   bool firebaseReady();
 };

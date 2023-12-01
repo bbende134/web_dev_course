@@ -59,7 +59,17 @@ void loop() {
   current_millis_distance = millis();
   current_millis_temp = current_millis_distance;
 
-  if (network->firebaseReady() && network->readPost()) Serial.println("posting");
+  if (network->firebaseReady() && network->readPost()) {
+    tempsensor.wake();
+    double c = (double)tempsensor.readTempC();
+    Serial.print("Room temp: ");
+    Serial.print(c, 4);
+    Serial.println("°C\t  ");
+    tempsensor.shutdown_wake(1);
+    Serial.println(network->postWebhooks("post_mail", String((int)c)));
+    Serial.print("post update: ");
+    Serial.println(network->updatePost());
+  }
 
   if (network->firebaseReady() && (current_millis_temp - previous_millis_temp >= time_interval_temp)) {
 
@@ -107,11 +117,11 @@ void loop() {
 
       if (!network->readIsHome() && distance_change >= distance_interval) {
         Serial.println("alert!!, door is open");
-        network->postWebhooks("open");
+        network->postWebhooks("send_alert", "open");
       }
       if (!network->readIsHome() && distance_change < 0) {
         Serial.println("alert!!, door is closed");
-        network->postWebhooks("closed");
+        network->postWebhooks("send_alert", "closed");
       }
       // Update the previous distance and previous millis
       previous_distance = distance;

@@ -20,10 +20,9 @@
 static Network* instance = NULL;
 
 // IFTTT data
-String eventNAME = "send_alert";
-String webhooksKEY = "jvTLWbxqrCvcVdM3e3Uxp";
+const String webhooksKEY = "jvTLWbxqrCvcVdM3e3Uxp";
 const int httpsPort = 443;
-String url = "https://maker.ifttt.com/trigger/" + eventNAME + "/with/key/" + webhooksKEY;
+
 
 
 Network::Network() {
@@ -102,6 +101,22 @@ bool Network::readPost() {
     return 0;
   }
 }
+bool Network::updatePost() {
+  FirebaseJson content;
+
+  String documentPath = "temperature/post";
+
+  content.set("fields/post/booleanValue", 0);
+
+  if (Firebase.Firestore.patchDocument(&fbdo, FIREBASE_PROJECT_ID, "" , documentPath.c_str(), content.raw(), "post")) {
+
+    return 1;
+
+  } else {
+    Serial.println(fbdo.errorReason());
+    return 0;
+  }
+}
 
 bool Network::readIsHome() {
   FirebaseJsonData result;
@@ -145,11 +160,12 @@ void Network::firebaseInit() {
 }
 
 
-int Network::postWebhooks(String value1) {
+int Network::postWebhooks(String eventNAME, String value1) {
 
+  String url = "https://maker.ifttt.com/trigger/" + eventNAME + "/with/key/" + webhooksKEY;
   if (WiFi.status() == WL_CONNECTED) {  //Check WiFi connection status
     HTTPClient http;
-
+    
     String url_out = url + "?value1=" + value1;
     Serial.print("url: ");
     Serial.println(url_out);
