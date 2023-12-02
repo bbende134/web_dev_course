@@ -76,6 +76,31 @@ bool Network::writeTemperatureData(double temp, String ts) {  // TODO: implement
   }
 }
 
+bool Network::writeDoorData(String ts, bool open) {  // TODO: implement for the new DB
+  FirebaseJson content;
+  FirebaseJson update_door;
+
+  ts.remove(ts.length() - 5, 5);
+  ts += "Z";
+
+  String documentPath = "door/acual_state" + ts;
+  content.set("fields/type/stringValue/", "actual_state");
+  content.set("fields/open/booleanValue/", open);
+  content.set("fields/ts/timestampValue/", ts);
+
+  update_door.set("fields/open/booleanValue", open);
+
+
+  if (Firebase.Firestore.createDocument(&fbdo, FIREBASE_PROJECT_ID, "", documentPath.c_str(), content.raw()) && 
+  Firebase.Firestore.patchDocument(&fbdo, FIREBASE_PROJECT_ID, "" , documentPath.c_str(), update_door.raw(), "open")) {
+    Serial.println("ok write actual temperature");
+    return 1;
+  } else {
+    Serial.println(fbdo.errorReason());
+    return 0;
+  }
+}
+
 bool Network::readPost() {
   FirebaseJsonData result;
   FirebaseJson query;
@@ -128,7 +153,7 @@ bool Network::readIsHome() {
   query.set("from/allDescendants", false);
 
   if (Firebase.Firestore.runQuery(&fbdo, FIREBASE_PROJECT_ID, "", "/", &query)) {
-    // Serial.printf("ok post\n%s\n\n", fbdo.payload().c_str());
+    Serial.printf("ok post\n%s\n\n", fbdo.payload().c_str());
     FirebaseJson resultJSON(fbdo.payload().c_str());
     resultJSON.get(result, "[0]/document/fields/isHome/booleanValue/");
     return result.to<bool>();

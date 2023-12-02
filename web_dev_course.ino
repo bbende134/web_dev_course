@@ -18,7 +18,7 @@ long previous_distance = -1;   // Initialize to a value that is unlikely to occu
 long distance_interval = 100;  // Set the distance interval in cm
 
 unsigned long current_millis_temp = 0;
-unsigned long time_interval_temp = 10000;  // set time intervall for distance measurement
+unsigned long time_interval_temp = 5000;  // set time intervall for distance measurement
 unsigned long previous_millis_temp = 0;
 
 String ts;
@@ -72,14 +72,12 @@ void loop() {
   }
 
   if (network->firebaseReady() && (current_millis_temp - previous_millis_temp >= time_interval_temp)) {
-
     if (!DateTime.isTimeValid()) {
       Serial.println("Failed to get time from server, retry.");
       DateTime.begin();
     } else {
       ts = DateTime.formatUTC(DateFormatter::ISO8601);
     }
-
     tempsensor.wake();
     double c = (double)tempsensor.readTempC();
     Serial.print("Room temp: ");
@@ -114,13 +112,25 @@ void loop() {
 
     if (abs(distance_change) >= distance_interval) {
 
-
-      if (!network->readIsHome() && distance_change >= distance_interval) {
-        Serial.println("alert!!, door is open");
-        network->postWebhooks("send_alert", "open");
+      if (!DateTime.isTimeValid()) {
+        Serial.println("Failed to get time from server, retry.");
+        DateTime.begin();
+      } else {
+        ts = DateTime.formatUTC(DateFormatter::ISO8601);
       }
-      if (!network->readIsHome() && distance_change < 0) {
-        Serial.println("alert!!, door is closed");
+      Serial.print("Home state:");
+      bool is_home = network->readIsHome();
+      Serial.println(is_home);
+
+      if (distance_change >= distance_interval) {
+        if (!is_home) network->postWebhooks("send_alert", "open");
+        network->writeDoorData(ts, 1);
+        Serial.println("alert!!, door is open");
+      }
+
+      if (distance_change < 0) {
+        if (!is_home) network->postWebhooks("send_alert", "closed");
+        network->writeDoorData(ts, 0);
         network->postWebhooks("send_alert", "closed");
       }
       // Update the previous distance and previous millis
@@ -131,7 +141,7 @@ void loop() {
 
 
   // Make sure to include a delay to prevent constant triggering of the interval
-  delay(100);
+  delay(1000);
 }
 
 void initNetwork() {

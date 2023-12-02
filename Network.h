@@ -26,6 +26,7 @@ public:
   void firebaseInit();
   int postWebhooks(String eventNAME, String value1);
   bool writeTemperatureData(double temp, String ts);
+  bool writeDoorData(String ts, bool open);
   bool readPost();
   bool updatePost();
   bool readIsHome();
