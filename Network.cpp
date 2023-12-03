@@ -56,7 +56,7 @@ void Network::initWiFi() {
   Serial.println();
 }
 
-bool Network::writeTemperatureData(double temp, String ts) {  // TODO: implement for the new DB
+bool Network::writeTemperatureData(double temp, String ts) { 
 
   FirebaseJson content;
   ts.remove(ts.length() - 5, 5);
@@ -76,7 +76,7 @@ bool Network::writeTemperatureData(double temp, String ts) {  // TODO: implement
   }
 }
 
-bool Network::writeDoorData(String ts, bool open) {  // TODO: implement for the new DB
+bool Network::writeDoorData(String ts, bool open) {  
   FirebaseJson content;
   FirebaseJson update_door;
 
@@ -90,7 +90,7 @@ bool Network::writeDoorData(String ts, bool open) {  // TODO: implement for the 
 
   update_door.set("fields/open/booleanValue", open);
 
-
+  // Update 
   if (Firebase.Firestore.createDocument(&fbdo, FIREBASE_PROJECT_ID, "", documentPath.c_str(), content.raw()) && 
   Firebase.Firestore.patchDocument(&fbdo, FIREBASE_PROJECT_ID, "" , documentPath.c_str(), update_door.raw(), "open")) {
     Serial.println("ok write actual temperature");
